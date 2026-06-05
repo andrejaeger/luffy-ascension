@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luffy's Ascension - Blue Line Fountain Escape</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background overlay for CRT scanline effect -->
+    <div class="crt-overlay"></div>
+
+    <div id="game-container">
+        <!-- Dashboard / HUD -->
+        <header id="hud">
+            <div class="hud-item health-container">
+                <span class="hud-label">HP</span>
+                <div class="bar-bg">
+                    <div id="health-bar" class="bar-fill health-fill"></div>
+                </div>
+            </div>
+            
+            <div class="hud-item energy-container">
+                <span class="hud-label">STAMINA</span>
+                <div class="bar-bg">
+                    <div id="energy-bar" class="bar-fill energy-fill"></div>
+                </div>
+            </div>
+
+            <div class="hud-itemstats">
+                <div class="hud-stat"><span class="hud-label">HEIGHT</span> <span id="height-val" class="hud-val">0m</span></div>
+                <div class="hud-stat"><span class="hud-label">BERRIES</span> <span id="score-val" class="hud-val">0</span></div>
+            </div>
+        </header>
+
+        <!-- Main Game Canvas -->
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="480" height="720"></canvas>
+        </div>
+
+        <!-- Overlays -->
+        <!-- Story / Intro Screen -->
+        <div id="intro-screen" class="overlay active">
+            <div class="overlay-content">
+                <h1>Luffy's Ascension</h1>
+                <h3 class="subtitle">Escape the Blue Line Fountain!</h3>
+                <div class="story-box">
+                    <p>💥 <strong>KATASTROPHE!</strong> Die <em>Thousand Sunny</em> ist an den Klippen eines geheimen Marine-Stützpunkts zerschellt! Plötzlich bricht eine uralte unterirdische Riesenfontäne – ähnlich der <strong>Blue Line</strong> – aus dem Meeresboden aus!</p>
+                    <p>🌊 Das Wasser steigt unaufhaltsam! Luffy muss seine Gum-Gum-Kräfte nutzen, um sich vertikal von Plattform zu Plattform zu ziehen, Marine-Wachen auszuschalten und den Marine-Kapitän an der Spitze zu besiegen, um den Flutmechanismus zu stoppen!</p>
+                </div>
+                <div class="controls-box">
+                    <h4>Steuerung:</h4>
+                    <ul>
+                        <li>🖱️ <strong>Klicken / Tippen</strong> auf eine Plattform über Luffy: Gomu Gomu Stretch (Greifen & Ziehen)</li>
+                        <li>⌨️ <strong>A / D</strong> oder <strong>◀ / ▶</strong>: Nach links/rechts bewegen</li>
+                        <li>⌨️ <strong>W / S</strong> oder <strong>▲ / ▼</strong>: Arme manuell einziehen / lockern</li>
+                        <li>⌨️ <strong>Leertaste (Space)</strong>: Gomu Gomu no Pistol (Fernangriff)</li>
+                    </ul>
+                </div>
+                <button id="start-btn" class="pixel-btn">SPIEL STARTEN</button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="overlay">
+            <div class="overlay-content">
+                <h2 class="danger-text">GAME OVER</h2>
+                <p>Das Wasser der Blue Line Fountain hat Luffy eingeholt...</p>
+                <div class="stats-summary">
+                    <p>Erreichte Höhe: <strong id="final-height">0m</strong></p>
+                    <p>Gesammelte Berries: <strong id="final-score">0</strong></p>
+                </div>
+                <button id="restart-btn" class="pixel-btn">ERNEUT VERSUCHEN</button>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="overlay">
+            <div class="overlay-content">
+                <h2 class="victory-text">SIEG!</h2>
+                <h3 class="victory-subtitle">Marine-Kapitän besiegt!</h3>
+                <p>🎉 Luffy hat das Flottentor geschlossen und die Sunny-Crew gerettet!</p>
+                <div class="stats-summary">
+                    <p>Endpunktzahl: <strong id="victory-score">0</strong></p>
+                </div>
+                <button id="win-restart-btn" class="pixel-btn">NOCHMAL SPIELEN</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
