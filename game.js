@@ -130,8 +130,8 @@ canvas.addEventListener('touchstart', (e) => {
 
 // UI Click Listeners
 document.getElementById('start-btn').addEventListener('click', startGame);
-document.getElementById('restart-btn').addEventListener('click', startGame);
-document.getElementById('win-restart-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', showIntroScreen);
+document.getElementById('win-restart-btn').addEventListener('click', showIntroScreen);
 
 function startGame() {
     introScreen.classList.remove('active');
@@ -827,6 +827,33 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
+function showIntroScreen() {
+    gameState = STATE_INTRO;
+    introScreen.classList.add('active');
+    gameoverScreen.classList.remove('active');
+    victoryScreen.classList.remove('active');
+    
+    // Reset background elements for preview
+    score = 0;
+    cameraY = 0;
+    highestY = canvas.height - 100;
+    waterLevel = canvas.height + 200;
+    generateLevel();
+    
+    // Position player
+    player.x = canvas.width / 2;
+    player.y = canvas.height - 100;
+    player.vx = 0;
+    player.vy = 0;
+    player.health = 100;
+    player.energy = 100;
+    player.grapple.active = false;
+    
+    playerProjectiles = [];
+    enemyProjectiles = [];
+    particles = [];
+}
+
 // Initialize and begin loops
-startGame();
+showIntroScreen();
 loop();
