@@ -26,21 +26,21 @@ function initGame() {
     const GRAVITY = 0.45;
     const FRICTION = 0.88;
     const JUMP_FORCE = -10.0;
-    const GROUND_Y = canvas.height - 40;
+    const GROUND_Y = canvas.height - 60; // Ground platform height
     const STRETCH_COST = 0.18;
     const ENERGY_REGEN = 0.5;
 
     // Game World Variables
     let score = 0;
-    let highestHeight = 0;
-    let cameraY = 0;
-    let targetCameraY = 0;
-    let maxLevelHeight = 4500; // Target height to win
+    let highestHeight = 0; // Tracks highest distance (X coordinate)
+    let cameraX = 0;
+    let targetCameraX = 0;
+    let maxLevelHeight = 30000; // Total horizontal length of level (3000m)
     let screenShake = 0;
 
     // Player Object (Monkey D. Luffy)
     const player = {
-        x: canvas.width / 2 - 14,
+        x: 100,
         y: GROUND_Y - 38,
         vx: 0,
         vy: 0,
@@ -60,8 +60,8 @@ function initGame() {
             tx: 0,
             ty: 0,
             length: 0,
-            maxLength: 300,
-            k: 0.08, // Spring force
+            maxLength: 320,
+            k: 0.08, // Spring force constant
             damping: 0.95
         },
 
@@ -70,10 +70,9 @@ function initGame() {
         animationTimer: 0
     };
 
-    // Hazard: Rising Water level (Blue Line Fountain)
-    let waterLevel = canvas.height + 100;
-    let waterRiseSpeed = 0.65;
-    let waterPulseTimer = 0;
+    // Hazard: Chasing Tsunami (deluge from the left)
+    let tsunamiX = -300;
+    let tsunamiBaseSpeed = 3.3;
 
     // Entity Arrays
     let platforms = [];
@@ -114,12 +113,12 @@ function initGame() {
         if (e.key === ' ') keys.space = false;
     });
 
-    // Tap / Click to grapple watchtowers in the upper half, or jump on the lower half
+    // Tap / Click on watchtowers / upper area to grapple, lower area to jump
     canvas.addEventListener('mousedown', (e) => {
         if (gameState !== STATE_PLAYING) return;
         const rect = canvas.getBoundingClientRect();
         const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const clickY = (e.clientY - rect.top) * (canvas.height / rect.height) + cameraY;
+        const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
         
         if (clickY > player.y + 20) {
             attemptJump();
@@ -133,7 +132,7 @@ function initGame() {
         const rect = canvas.getBoundingClientRect();
         const touch = e.touches[0];
         const clickX = (touch.clientX - rect.left) * (canvas.width / rect.width);
-        const clickY = (touch.clientY - rect.top) * (canvas.height / rect.height) + cameraY;
+        const clickY = (touch.clientY - rect.top) * (canvas.height / rect.height);
         
         if (clickY > player.y + 20) {
             attemptJump();
@@ -201,11 +200,10 @@ function initGame() {
         gameoverScreen.classList.remove('active');
         victoryScreen.classList.remove('active');
         
-        // Setup initial background visual platforms
         score = 0;
-        cameraY = 0;
-        targetCameraY = 0;
-        waterLevel = canvas.height + 100;
+        cameraX = 0;
+        targetCameraX = 0;
+        tsunamiX = -300;
         generateLevelPreview();
     }
 
@@ -215,9 +213,9 @@ function initGame() {
         victoryScreen.classList.remove('active');
 
         // Reset Player stats
-        player.x = canvas.width / 2 - 14;
+        player.x = 100;
         player.y = GROUND_Y - 40;
-        player.vx = 0;
+        player.vx = 4.0; // Starts running
         player.vy = 0;
         player.health = 100;
         player.energy = 100;
@@ -226,12 +224,10 @@ function initGame() {
         // Reset World stats
         score = 0;
         highestHeight = 0;
-        cameraY = 0;
-        targetCameraY = 0;
+        cameraX = 0;
+        targetCameraX = 0;
         screenShake = 0;
-        waterLevel = canvas.height + 150;
-        waterRiseSpeed = 0.65;
-        waterPulseTimer = 0;
+        tsunamiX = -300;
 
         platforms = [];
         enemies = [];
@@ -239,121 +235,207 @@ function initGame() {
         enemyProjectiles = [];
         particles = [];
 
-        // Generate full vertical level climb
+        // Generate full horizontal runner level
         generateLevel();
 
         gameState = STATE_PLAYING;
     }
 
-    // Generate vertical structures climb
+    // Generate horizontal level design with zero dead-ends
     function generateLevel() {
         platforms = [];
         enemies = [];
 
-        // Ground platform
+        let currentX = 0;
+        const chasmChance = 0.16;
+        const obstacleChance = 0.48;
+
+        // Ground start segment
         platforms.push({
             x: 0,
             y: GROUND_Y,
-            width: canvas.width,
+            width: 1200,
             height: 60,
             type: 'ground',
             color: '#1c2530'
         });
+        currentX = 1200;
 
-        // Procedurally stack watchtowers and decks upwards
-        let currentY = GROUND_Y - 140;
-        while (currentY > -maxLevelHeight) {
-            const numTowers = 2 + Math.floor(Math.random() * 2);
-            
-            for (let i = 0; i < numTowers; i++) {
-                const towerX = 50 + (i * (canvas.width - 160) / (numTowers - 1)) + (Math.random() - 0.5) * 40;
-                const towerWidth = 60 + Math.random() * 30;
-                const towerHeight = 110 + Math.random() * 50;
-
-                // Watchtower column
+        while (currentX < maxLevelHeight) {
+            // Spawning chasm (water pit)
+            if (Math.random() < chasmChance && currentX < maxLevelHeight - 2000) {
+                const chasmWidth = 120; // 120px is easily jumpable at high speeds or grappleable
+                
+                // Spawn a cloud deck above the chasm to serve as a grapple point
+                const cloudX = currentX + chasmWidth / 2 - 50;
+                const cloudY = GROUND_Y - 140;
                 platforms.push({
-                    x: towerX,
-                    y: currentY,
-                    width: towerWidth,
-                    height: towerHeight,
-                    type: 'watchtower',
-                    color: '#3e2723' // Wood brown
+                    x: cloudX,
+                    y: cloudY,
+                    width: 100,
+                    height: 15,
+                    type: 'cloud-platform',
+                    color: '#8395a7'
                 });
 
-                // Node lantern for grappling at top center of tower
+                // Spawn a grapple node center top of cloud
                 platforms.push({
-                    x: towerX + (towerWidth / 2) - 5,
-                    y: currentY - 18,
+                    x: cloudX + 45,
+                    y: cloudY - 18,
                     width: 10,
                     height: 10,
                     type: 'grapple-node',
                     color: '#ffcc00'
                 });
 
-                // Spawn Marine Guard patrolling the deck
-                if (Math.random() < 0.45 && currentY < GROUND_Y - 300) {
+                currentX += chasmWidth;
+            } else {
+                // Spawn normal ground segment
+                const segmentWidth = 400 + Math.floor(Math.random() * 400);
+                platforms.push({
+                    x: currentX,
+                    y: GROUND_Y,
+                    width: segmentWidth,
+                    height: 60,
+                    type: 'ground',
+                    color: '#1c2530'
+                });
+
+                // Spawn procedural obstacles ON this ground segment
+                let spawnOffset = 150;
+                while (spawnOffset < segmentWidth - 150) {
+                    const obstacleX = currentX + spawnOffset;
+
+                    if (Math.random() < obstacleChance) {
+                        const roll = Math.random();
+                        if (roll < 0.45) {
+                            // Low Barricade (easily jumpable, height 32px)
+                            platforms.push({
+                                x: obstacleX,
+                                y: GROUND_Y - 32,
+                                width: 28,
+                                height: 32,
+                                type: 'barricade',
+                                color: '#5d4037'
+                            });
+                        } else if (roll < 0.85) {
+                            // Marine Watchtower (requires grapple or cloud jump, height 160px)
+                            const towerWidth = 64;
+                            const towerHeight = 160;
+
+                            platforms.push({
+                                x: obstacleX,
+                                y: GROUND_Y - towerHeight,
+                                width: towerWidth,
+                                height: towerHeight,
+                                type: 'watchtower',
+                                color: '#3e2723'
+                            });
+
+                            // Node lantern for grapple on top center
+                            platforms.push({
+                                x: obstacleX + (towerWidth / 2) - 5,
+                                y: GROUND_Y - towerHeight - 18,
+                                width: 10,
+                                height: 10,
+                                type: 'grapple-node',
+                                color: '#ffcc00'
+                            });
+
+                            // Spawn floating cloud platform step before the tower to ensure it can always be crossed
+                            platforms.push({
+                                x: obstacleX - 80,
+                                y: GROUND_Y - 80,
+                                width: 45,
+                                height: 10,
+                                type: 'cloud-platform',
+                                color: '#8395a7'
+                            });
+
+                            // Spawn Marine Guard patrolling tower deck
+                            if (Math.random() < 0.5) {
+                                enemies.push({
+                                    x: obstacleX + 10,
+                                    y: GROUND_Y - towerHeight - 32,
+                                    width: 20,
+                                    height: 32,
+                                    patrolMin: obstacleX + 2,
+                                    patrolMax: obstacleX + towerWidth - 22,
+                                    vx: 0.6,
+                                    direction: 1,
+                                    health: 22,
+                                    maxHealth: 22,
+                                    shootCooldown: 80 + Math.random() * 80,
+                                    type: 'guard'
+                                });
+                            }
+                        } else {
+                            // Ground Spikes (jumpable, height 12px)
+                            platforms.push({
+                                x: obstacleX,
+                                y: GROUND_Y - 12,
+                                width: 50,
+                                height: 12,
+                                type: 'spikes',
+                                color: '#7f8c8d'
+                            });
+                        }
+
+                        spawnOffset += 240; // Spacing increment
+                    } else {
+                        spawnOffset += 100;
+                    }
+                }
+
+                // Patrolling Guard on ground level
+                if (Math.random() < 0.4) {
                     enemies.push({
-                        x: towerX + 10,
-                        y: currentY - 32,
-                        width: 20,
-                        height: 32,
-                        patrolMin: towerX + 2,
-                        patrolMax: towerX + towerWidth - 22,
-                        vx: 0.7 + Math.random() * 0.5,
-                        direction: 1,
-                        health: 22,
-                        maxHealth: 22,
-                        shootCooldown: 80 + Math.random() * 80,
-                        type: 'guard'
+                       x: currentX + segmentWidth / 2,
+                       y: GROUND_Y - 32,
+                       width: 20,
+                       health: 22,
+                       maxHealth: 22,
+                       patrolMin: currentX + 40,
+                       patrolMax: currentX + segmentWidth - 40,
+                       vx: 0.7,
+                       direction: 1,
+                       shootCooldown: 90 + Math.random() * 80,
+                       type: 'guard'
                     });
                 }
-            }
 
-            // Floating intermediate cloud decks or spike barriers
-            if (Math.random() < 0.4) {
-                const cloudX = Math.random() * (canvas.width - 120);
-                platforms.push({
-                    x: cloudX,
-                    y: currentY + 60,
-                    width: 100,
-                    height: 15,
-                    type: 'cloud-platform',
-                    color: '#8395a7'
-                });
+                currentX += segmentWidth;
             }
-
-            currentY -= 200; // Step height increments upwards
         }
 
-        // Final Boss platform at the top
-        const bossPlatformY = -maxLevelHeight;
+        // Final Boss platform at maxLevelHeight
         platforms.push({
-            x: 100,
-            y: bossPlatformY,
-            width: canvas.width - 200,
-            height: 25,
+            x: maxLevelHeight,
+            y: GROUND_Y,
+            width: 1200,
+            height: 60,
             type: 'boss-platform',
             color: '#4f5d75'
         });
 
         // Spawn Captain Smoker Boss
         enemies.push({
-            x: canvas.width / 2 - 18,
-            y: bossPlatformY - 60,
+            x: maxLevelHeight + 350,
+            y: GROUND_Y - 60,
             width: 36,
             height: 60,
-            patrolMin: 120,
-            patrolMax: canvas.width - 160,
-            vx: 1.3,
+            patrolMin: maxLevelHeight + 150,
+            patrolMax: maxLevelHeight + 800,
+            vx: 1.2,
             direction: 1,
             health: 280,
             maxHealth: 280,
-            shootCooldown: 70,
+            shootCooldown: 60,
             type: 'boss'
         });
     }
 
-    // Preview generation
+    // Preview level generation
     function generateLevelPreview() {
         platforms = [{ x: 0, y: GROUND_Y, width: canvas.width, height: 60, type: 'ground', color: '#1c2530' }];
         enemies = [];
@@ -361,7 +443,12 @@ function initGame() {
 
     // Jump mechanic
     function attemptJump() {
-        if (player.isGrounded) {
+        if (player.grapple.active) {
+            // Pressing W/Jump while grappled cuts rope and launches Luffy up
+            player.grapple.active = false;
+            player.vy = -6.0;
+            createSparks(player.x, player.y, '#ffffff', 4);
+        } else if (player.isGrounded) {
             player.vy = JUMP_FORCE;
             player.isGrounded = false;
             createSparks(player.x + player.width/2, player.y + player.height, '#ffffff', 4);
@@ -372,13 +459,16 @@ function initGame() {
     function attemptGrapple(clickX, clickY) {
         if (player.energy < 15) return;
 
-        // Search for node
+        // Convert screen clickX to absolute X coordinate based on camera scroll
+        const absoluteClickX = clickX + cameraX;
+
+        // Search for hook node
         for (let p of platforms) {
             if (p.type === 'grapple-node' || p.type === 'cloud-platform' || p.type === 'boss-platform') {
                 const px = p.x + (p.width / 2);
                 const py = p.y;
 
-                if (clickX >= p.x - 25 && clickX <= p.x + p.width + 25 &&
+                if (absoluteClickX >= p.x - 25 && absoluteClickX <= p.x + p.width + 25 &&
                     clickY >= p.y - 25 && clickY <= p.y + p.height + 25) {
                     
                     const dx = px - player.x;
@@ -389,7 +479,7 @@ function initGame() {
                         player.grapple.active = true;
                         player.grapple.tx = px;
                         player.grapple.ty = py;
-                        player.grapple.length = dist * 0.8; // Elastic tension factor
+                        player.grapple.length = dist * 0.8; // Elastic spring rest-length
                         
                         player.energy -= 15;
                         createSparks(px, py, '#ffcc00', 8);
@@ -400,7 +490,7 @@ function initGame() {
         }
     }
 
-    // Giant Gear Third ranged projectile
+    // Giant Gear Third ranged punch
     function shootProjectile() {
         if (gameState !== STATE_PLAYING) return;
         if (player.energy < 25) return;
@@ -452,29 +542,37 @@ function initGame() {
         if (screenShake > 0.1) screenShake *= 0.9;
         if (player.invulnerableFrames > 0) player.invulnerableFrames--;
 
-        // Horizontal Keyboard movement controls
+        // Horizontal Movement logic (Auto-run default, key steering modifiers)
+        const baseRunSpeed = 3.5;
         if (keys.d || keys.ArrowRight) {
-            player.vx = 4.0;
+            player.vx = Math.min(5.8, player.vx + 0.15);
+            player.direction = 1;
+            player.animationTimer++;
+            if (player.animationTimer > 5) {
+                player.animationFrame = (player.animationFrame + 1) % 4;
+                player.animationTimer = 0;
+            }
+        } else if (keys.a || keys.ArrowLeft) {
+            player.vx = Math.max(1.5, player.vx - 0.15);
+            player.direction = -1;
+            player.animationTimer++;
+            if (player.animationTimer > 5) {
+                player.animationFrame = (player.animationFrame + 1) % 4;
+                player.animationTimer = 0;
+            }
+        } else {
+            // Auto run centering
+            if (player.vx < baseRunSpeed) player.vx = Math.min(baseRunSpeed, player.vx + 0.1);
+            if (player.vx > baseRunSpeed) player.vx = Math.max(baseRunSpeed, player.vx - 0.1);
             player.direction = 1;
             player.animationTimer++;
             if (player.animationTimer > 6) {
                 player.animationFrame = (player.animationFrame + 1) % 4;
                 player.animationTimer = 0;
             }
-        } else if (keys.a || keys.ArrowLeft) {
-            player.vx = -4.0;
-            player.direction = -1;
-            player.animationTimer++;
-            if (player.animationTimer > 6) {
-                player.animationFrame = (player.animationFrame + 1) % 4;
-                player.animationTimer = 0;
-            }
-        } else {
-            player.vx *= FRICTION; // Slide decay
-            player.animationFrame = 0; // Standing/Idle frame
         }
 
-        // Grapple elastic joint physics
+        // Grapple elastic joints spring physics
         if (player.grapple.active) {
             const dx = player.grapple.tx - player.x;
             const dy = player.grapple.ty - player.y;
@@ -485,11 +583,11 @@ function initGame() {
                 player.grapple.active = false;
             }
 
-            // Grapple length adjustment W/S
+            // Grapple length adjustment W/S keys
             if (keys.w || keys.ArrowUp) player.grapple.length = Math.max(30, player.grapple.length - 3.5);
             if (keys.s || keys.ArrowDown) player.grapple.length = Math.min(player.grapple.maxLength, player.grapple.length + 3.5);
 
-            // Pull math
+            // Apply pull physics
             if (dist > player.grapple.length) {
                 const stretch = dist - player.grapple.length;
                 const force = stretch * player.grapple.k;
@@ -497,52 +595,49 @@ function initGame() {
                 player.vy += (dy / dist) * force;
             }
 
-            // Release grapple if climbing past grapple anchor height
-            if (player.y < player.grapple.ty + 8) {
+            // Grapple automatically releases if player gets very close or swings past
+            if (dist < 20 || player.y < player.grapple.ty - 10) {
                 player.grapple.active = false;
-                player.vy = -3.5; // slight boost upwards
+                player.vy = -3.0; // minor boost
             }
         } else {
             player.energy = Math.min(player.maxEnergy, player.energy + ENERGY_REGEN);
         }
 
-        // Apply velocities
+        // Apply physical velocities
         player.vy += GRAVITY;
         player.x += player.vx;
         player.y += player.vy;
 
-        // Sideways boundaries
+        // Left boundary clamp
         if (player.x < 10) {
             player.x = 10;
             player.vx = 0;
         }
-        if (player.x + player.width > canvas.width - 10) {
-            player.x = canvas.width - 10 - player.width;
-            player.vx = 0;
-        }
 
-        // Rising water deluge logic (rises from bottom)
-        waterPulseTimer++;
-        if (waterPulseTimer > 350) {
-            waterPulseTimer = 0;
-            waterLevel -= 55; // volcanic burst surge upwards
-            createSparks(canvas.width / 2, waterLevel, '#ffffff', 20);
+        // Chasing Tsunami math (rubber-banding based on player distance)
+        const distanceToWave = player.x - tsunamiX;
+        let tsunamiSpeed = tsunamiBaseSpeed;
+        if (distanceToWave > 380) {
+            tsunamiSpeed = Math.min(6.5, tsunamiSpeed + (distanceToWave - 380) * 0.015);
+        } else if (distanceToWave < 120) {
+            tsunamiSpeed = Math.max(1.8, tsunamiSpeed - (120 - distanceToWave) * 0.05);
         }
-        
-        // Steady water rise (speeds up as player climbs higher)
-        const altitudeMultiplier = Math.max(1, Math.floor(Math.abs(player.y) / 1000));
-        waterLevel -= waterRiseSpeed * altitudeMultiplier;
+        tsunamiX += tsunamiSpeed;
 
-        // Submersion check
-        if (player.y + player.height > waterLevel) {
-            damagePlayer(0.8);
+        // Submersion inside tsunami wave
+        if (player.x < tsunamiX + 15) {
+            damagePlayer(0.9);
+            player.x = tsunamiX + 15; // push player forward
+            if (player.vx < 1.0) player.vx = 2.0;
+
             if (Math.random() < 0.2) {
                 particles.push({
                     x: player.x + Math.random() * player.width,
-                    y: player.y + player.height,
-                    vx: (Math.random() - 0.5) * 2,
+                    y: player.y + player.height/2,
+                    vx: -2.0 + Math.random() * 2,
                     vy: -Math.random() * 3,
-                    radius: 3 + Math.random() * 4,
+                    radius: 3 + Math.random() * 3,
                     color: '#e0ffff',
                     alpha: 0.8,
                     decay: 0.02
@@ -550,30 +645,52 @@ function initGame() {
             }
         }
 
+        // Chasm / Bottom boundary death condition
+        if (player.y > canvas.height + 50) {
+            damagePlayer(100);
+        }
+
         if (player.health <= 0) {
             triggerGameOver();
         }
 
-        // Platforms collisions (Ground, Watchtowers, Cloud Decks)
+        // Platforms & Obstacles Collisions
         player.isGrounded = false;
         for (let p of platforms) {
+            // Standing collision (Landing)
             if (player.vx + player.x + player.width > p.x &&
                 player.x < p.x + p.width &&
                 player.y + player.height >= p.y &&
                 player.y + player.height - player.vy <= p.y + 10) {
                 
-                player.y = p.y - player.height;
-                player.vy = 0;
-                player.isGrounded = true;
+                if (p.type === 'spikes') {
+                    damagePlayer(15);
+                    player.vy = -6.0;
+                    player.vx = -1.5;
+                } else {
+                    player.y = p.y - player.height;
+                    player.vy = 0;
+                    player.isGrounded = true;
+                }
+            }
+
+            // Lateral Wall collision
+            if (p.type === 'watchtower' || p.type === 'barricade') {
+                if (player.x + player.width >= p.x && player.x < p.x + p.width &&
+                    player.y + player.height > p.y && player.y < p.y + p.height) {
+                    
+                    player.x = p.x - player.width;
+                    player.vx = 0.5; // knockback push
+                }
             }
         }
 
-        // Player Projectiles
+        // Process Player Projectiles (Gear Third fists)
         for (let i = playerProjectiles.length - 1; i >= 0; i--) {
             const proj = playerProjectiles[i];
             proj.x += proj.vx;
 
-            if (proj.x < 0 || proj.x > canvas.width) {
+            if (proj.x < cameraX || proj.x > cameraX + canvas.width) {
                 playerProjectiles.splice(i, 1);
                 continue;
             }
@@ -593,7 +710,7 @@ function initGame() {
                         score += 200;
 
                         if (enemy.type === 'boss') {
-                            triggerVictory();
+                            // Boss defeated! We can proceed to Thousand Sunny
                         }
                     }
                     break;
@@ -601,7 +718,7 @@ function initGame() {
             }
         }
 
-        // Enemies update
+        // Enemies updates
         for (let enemy of enemies) {
             enemy.x += enemy.vx * enemy.direction;
             if (enemy.x <= enemy.patrolMin) enemy.direction = 1;
@@ -609,14 +726,13 @@ function initGame() {
 
             enemy.shootCooldown--;
             if (enemy.shootCooldown <= 0) {
-                enemy.shootCooldown = enemy.type === 'boss' ? 75 : 120 + Math.random() * 80;
+                enemy.shootCooldown = enemy.type === 'boss' ? 70 : 110 + Math.random() * 80;
                 
-                // Shoot projectile towards Luffy
                 const dx = player.x - enemy.x;
                 const dy = player.y - enemy.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < 450) {
+                if (dist < 420) {
                     const angle = Math.atan2(dy, dx);
                     enemyProjectiles.push({
                         x: enemy.x + enemy.width/2,
@@ -631,7 +747,7 @@ function initGame() {
                 }
             }
 
-            // Body contact damage
+            // Direct damage contact
             if (player.x + player.width >= enemy.x && player.x <= enemy.x + enemy.width &&
                 player.y + player.height >= enemy.y && player.y <= enemy.y + enemy.height) {
                 damagePlayer(enemy.type === 'boss' ? 20 : 12);
@@ -644,8 +760,7 @@ function initGame() {
             proj.x += proj.vx;
             proj.y += proj.vy;
 
-            // boundaries check
-            if (proj.x < 0 || proj.x > canvas.width || proj.y < cameraY || proj.y > cameraY + canvas.height) {
+            if (proj.x < cameraX - 50 || proj.x > cameraX + canvas.width + 50 || proj.y < -100 || proj.y > canvas.height + 100) {
                 enemyProjectiles.splice(i, 1);
                 continue;
             }
@@ -668,23 +783,37 @@ function initGame() {
             if (p.alpha <= 0) particles.splice(i, 1);
         }
 
-        // Camera Tracking Y (Smooth Y scroll centering player, camera never scrolls down)
-        targetCameraY = player.y - canvas.height / 2 + 50;
-        if (targetCameraY < cameraY) {
-            cameraY += (targetCameraY - cameraY) * 0.12;
+        // Camera Tracking X (Smooth X scroll centering player)
+        targetCameraX = player.x - 180;
+        if (targetCameraX < 0) targetCameraX = 0;
+        const maxCamX = maxLevelHeight + 1000 - canvas.width;
+        if (targetCameraX > maxCamX) targetCameraX = maxCamX;
+        cameraX += (targetCameraX - cameraX) * 0.1;
+
+        // Progress distance score
+        const currentDistance = Math.max(0, Math.floor(player.x / 10));
+        if (currentDistance > highestHeight) {
+            score += (currentDistance - highestHeight) * 10;
+            highestHeight = currentDistance;
         }
 
-        // Height score metrics
-        const currentHeight = Math.max(0, Math.floor((GROUND_Y - player.height - player.y) / 10));
-        if (currentHeight > highestHeight) {
-            highestHeight = currentHeight;
-            score += (currentHeight - highestHeight) * 10;
+        // Boss gate victory condition check (Must defeat Smoker to pass)
+        if (player.x >= maxLevelHeight + 550) {
+            const smokerAlive = enemies.some(e => e.type === 'boss');
+            if (smokerAlive) {
+                // block and bounce player back
+                player.x = maxLevelHeight + 550;
+                player.vx = -1.5;
+                createSparks(player.x + player.width, player.y + player.height/2, '#ff3344', 4);
+            } else {
+                triggerVictory();
+            }
         }
 
-        updateHUD(currentHeight);
+        updateHUD(currentDistance);
     }
 
-    // Update HUD
+    // Update HUD display
     function updateHUD(h) {
         healthBar.style.width = `${player.health}%`;
         energyBar.style.width = `${player.energy}%`;
@@ -692,75 +821,69 @@ function initGame() {
         scoreVal.textContent = score;
     }
 
-    // Draw Luffy Pixel Art Sprite (tilted running or idle frames)
+    // Draw Luffy Pixel Art Sprite
     function drawLuffy(ctx, px, py) {
-        const timeFrame = player.animationFrame; // 0 to 3 running animation cycle
+        const timeFrame = player.animationFrame;
         const isRunning = Math.abs(player.vx) > 0.5;
 
         ctx.save();
-        // Translate center of player body
         ctx.translate(px + player.width / 2, py + player.height / 2);
-        
-        // Flip direction scale
         ctx.scale(player.direction, 1);
 
-        // Tilt body if running
-        if (isRunning) {
+        if (isRunning && player.isGrounded) {
             ctx.rotate(0.12);
         }
 
-        // Draw Straw Hat
-        ctx.fillStyle = '#eedb52'; // Straw yellow
-        ctx.fillRect(-12, -22, 24, 4); // Brim
-        ctx.fillRect(-7, -27, 14, 5); // Crown
-        ctx.fillStyle = '#ff3344'; // Ribbon
+        // Straw Hat
+        ctx.fillStyle = '#eedb52';
+        ctx.fillRect(-12, -22, 24, 4);
+        ctx.fillRect(-7, -27, 14, 5);
+        ctx.fillStyle = '#ff3344';
         ctx.fillRect(-7, -23, 14, 2);
 
-        // Head / Skin Face
+        // Head / skin
         ctx.fillStyle = '#ffccaa';
         ctx.fillRect(-6, -18, 12, 8);
         
-        // Dark brown hair / grin
+        // Hair / grin
         ctx.fillStyle = '#3e2723';
-        ctx.fillRect(-7, -18, 2, 8); // hair back
-        ctx.fillRect(4, -14, 2, 2); // eye
-        ctx.fillRect(-4, -10, 8, 2); // grin
+        ctx.fillRect(-7, -18, 2, 8);
+        ctx.fillRect(4, -14, 2, 2);
+        ctx.fillRect(-4, -10, 8, 2);
 
         // Red Vest
         ctx.fillStyle = '#ff3344';
         ctx.fillRect(-8, -10, 16, 11);
-        ctx.fillStyle = '#ffeedd'; // Vest open chest skin
+        ctx.fillStyle = '#ffeedd';
         ctx.fillRect(-2, -10, 4, 6);
 
         // Blue Shorts
         ctx.fillStyle = '#3a86c8';
         ctx.fillRect(-8, 1, 16, 8);
 
-        // Legs run-cycle frames
+        // Legs run cycle
         ctx.fillStyle = '#ffccaa';
         if (player.isGrounded) {
             if (isRunning) {
                 if (timeFrame === 0) {
-                    ctx.fillRect(2, 9, 5, 8); // Left Leg forward
-                    ctx.fillRect(-8, 9, 4, 8); // Right Leg back
+                    ctx.fillRect(2, 9, 5, 8);
+                    ctx.fillRect(-8, 9, 4, 8);
                     ctx.fillRect(-10, 15, 4, 2);
                 } else if (timeFrame === 1 || timeFrame === 3) {
-                    ctx.fillRect(-4, 9, 4, 8); // Passing
+                    ctx.fillRect(-4, 9, 4, 8);
                     ctx.fillRect(0, 9, 4, 8);
                 } else if (timeFrame === 2) {
-                    ctx.fillRect(-7, 9, 5, 8); // Right Leg forward
-                    ctx.fillRect(3, 9, 4, 8); // Left Leg back
+                    ctx.fillRect(-7, 9, 5, 8);
+                    ctx.fillRect(3, 9, 4, 8);
                     ctx.fillRect(5, 15, 4, 2);
                 }
             } else {
-                // Standing Idle Stance
                 ctx.fillRect(-5, 9, 4, 8);
                 ctx.fillRect(1, 9, 4, 8);
                 ctx.fillRect(-7, 15, 3, 2);
                 ctx.fillRect(1, 15, 3, 2);
             }
         } else {
-            // Jumping/Grappling midair frame
             ctx.fillRect(-6, 9, 4, 6);
             ctx.fillRect(2, 9, 4, 8);
             ctx.fillRect(4, 15, 4, 2);
@@ -773,14 +896,13 @@ function initGame() {
         } else {
             if (isRunning) {
                 if (timeFrame === 0 || timeFrame === 2) {
-                    ctx.fillRect(-11, -8, 3, 7); // Back arm swing
-                    ctx.fillRect(8, -6, 4, 4); // Front hand
+                    ctx.fillRect(-11, -8, 3, 7);
+                    ctx.fillRect(8, -6, 4, 4);
                 } else {
                     ctx.fillRect(8, -8, 3, 7);
                     ctx.fillRect(-11, -6, 4, 4);
                 }
             } else {
-                // Idle arms hanging down
                 ctx.fillRect(-10, -8, 3, 10);
                 ctx.fillRect(7, -8, 3, 10);
             }
@@ -803,17 +925,18 @@ function initGame() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.save();
-        // Translate for Y vertical scroll camera
-        ctx.translate(0, -cameraY);
+        // Translate for X camera scrolling
+        ctx.translate(-cameraX, 0);
 
-        // 1. Parallax background walls/decorations
+        // 1. Parallax background pillars/clouds
         ctx.fillStyle = '#161d28';
-        for (let i = Math.floor(cameraY / 200) * 200 - 200; i < cameraY + canvas.height + 200; i += 200) {
-            ctx.fillRect(15, i, 4, 120);
-            ctx.fillRect(canvas.width - 19, i + 80, 4, 120);
+        const bgStart = Math.floor(cameraX / 300) * 300 - 300;
+        for (let x = bgStart; x < cameraX + canvas.width + 300; x += 300) {
+            ctx.fillRect(x + 50, 40, 8, GROUND_Y - 40);
+            ctx.fillRect(x + 180, 80, 8, GROUND_Y - 80);
         }
 
-        // 2. Draw Ground and Platforms (Watchtowers/Cloud Decks)
+        // 2. Draw Ground and Platforms
         for (let p of platforms) {
             ctx.fillStyle = p.color;
             ctx.fillRect(p.x, p.y, p.width, p.height);
@@ -825,7 +948,6 @@ function initGame() {
             ctx.fillRect(p.x, p.y + p.height - 4, p.width, 4);
 
             if (p.type === 'watchtower') {
-                // Draw cross column bars
                 ctx.strokeStyle = '#281715';
                 ctx.lineWidth = 4;
                 ctx.beginPath();
@@ -835,26 +957,33 @@ function initGame() {
                 ctx.lineTo(p.x + 12, p.y + p.height);
                 ctx.stroke();
 
-                // Deck guard rails
                 ctx.fillStyle = '#5d4037';
                 ctx.fillRect(p.x - 5, p.y - 12, p.width + 10, 4);
+            } else if (p.type === 'spikes') {
+                ctx.fillStyle = '#7f8c8d';
+                ctx.beginPath();
+                for (let sx = p.x; sx < p.x + p.width; sx += 10) {
+                    ctx.moveTo(sx, p.y + p.height);
+                    ctx.lineTo(sx + 5, p.y);
+                    ctx.lineTo(sx + 10, p.y + p.height);
+                }
+                ctx.fill();
             }
         }
 
         // 3. Draw Enemies (One Piece Marine Uniforms)
         for (let enemy of enemies) {
             if (enemy.type === 'boss') {
-                // Draw Smoker floating on smoke
-                ctx.fillStyle = '#d1d8e0'; // smoke body bottom
+                // Smoker floating on smoke
+                ctx.fillStyle = '#d1d8e0';
                 ctx.fillRect(enemy.x - 5, enemy.y + enemy.height - 22, enemy.width + 10, 22);
-                ctx.fillStyle = '#4f5d75'; // Blue double coat
+                ctx.fillStyle = '#4f5d75';
                 ctx.fillRect(enemy.x, enemy.y + 8, enemy.width, enemy.height - 26);
-                ctx.fillStyle = '#ffffff'; // White hair
+                ctx.fillStyle = '#ffffff';
                 ctx.fillRect(enemy.x + 8, enemy.y - 8, enemy.width - 16, 8);
-                ctx.fillStyle = '#ffccaa'; // Face
+                ctx.fillStyle = '#ffccaa';
                 ctx.fillRect(enemy.x + 6, enemy.y, enemy.width - 12, 8);
                 
-                // Jitte stick
                 ctx.strokeStyle = '#7f8c8d';
                 ctx.lineWidth = 4;
                 ctx.beginPath();
@@ -862,18 +991,17 @@ function initGame() {
                 ctx.lineTo(enemy.x + enemy.width + 10, enemy.y - 12);
                 ctx.stroke();
             } else {
-                // Patrolling Guard
-                ctx.fillStyle = '#ffffff'; // Shirt white
+                // Patrolling Marine Guard
+                ctx.fillStyle = '#ffffff';
                 ctx.fillRect(enemy.x, enemy.y + 8, enemy.width, enemy.height - 20);
-                ctx.fillStyle = '#0f2042'; // Blue pants
+                ctx.fillStyle = '#0f2042';
                 ctx.fillRect(enemy.x, enemy.y + enemy.height - 12, enemy.width, 12);
-                ctx.fillStyle = '#ffffff'; // Cap
+                ctx.fillStyle = '#ffffff';
                 ctx.fillRect(enemy.x + 2, enemy.y - 6, enemy.width - 4, 6);
-                ctx.fillStyle = '#0f2042'; // Visor
+                ctx.fillStyle = '#0f2042';
                 ctx.fillRect(enemy.x + (enemy.direction === 1 ? enemy.width - 5 : 0), enemy.y - 2, 5, 2);
             }
 
-            // Enemy health display
             if (enemy.health < enemy.maxHealth) {
                 ctx.fillStyle = 'rgba(0,0,0,0.5)';
                 ctx.fillRect(enemy.x - 5, enemy.y - 16, enemy.width + 10, 4);
@@ -887,7 +1015,6 @@ function initGame() {
         for (let proj of playerProjectiles) {
             ctx.fillRect(proj.x, proj.y, proj.width, proj.height);
             
-            // Connect stretched Gomu arm line from player to projectile
             ctx.strokeStyle = '#ffccaa';
             ctx.lineWidth = 6;
             ctx.beginPath();
@@ -899,17 +1026,17 @@ function initGame() {
         // 5. Draw Enemy Projectiles
         for (let proj of enemyProjectiles) {
             if (proj.type === 'smoke') {
-                ctx.fillStyle = 'rgba(209, 216, 224, 0.7)'; // trans smoke plume
+                ctx.fillStyle = 'rgba(209, 216, 224, 0.7)';
                 ctx.fillRect(proj.x, proj.y, proj.width, proj.height);
             } else {
-                ctx.fillStyle = '#ffd152'; // sniper bullet
+                ctx.fillStyle = '#ffd152';
                 ctx.beginPath();
                 ctx.arc(proj.x + 3, proj.y + 3, 3, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        // 6. Draw Grappling Arm (Dehnbarer Gummikörper)
+        // 6. Draw Grappling Arm (Gomu Gomu arm)
         if (player.grapple.active) {
             ctx.strokeStyle = '#ffccaa';
             ctx.lineWidth = 6;
@@ -919,7 +1046,6 @@ function initGame() {
             ctx.lineTo(player.grapple.tx, player.grapple.ty);
             ctx.stroke();
 
-            // Grapple fist hand
             ctx.fillStyle = '#ff8866';
             ctx.fillRect(player.grapple.tx - 6, player.grapple.ty - 6, 12, 12);
         }
@@ -939,25 +1065,24 @@ function initGame() {
         }
         ctx.globalAlpha = 1.0;
 
-        // 9. Draw Rising Water Deluge (From the bottom)
+        // 9. Draw Chasing Tsunami (From the left side)
         ctx.fillStyle = 'rgba(0, 255, 255, 0.45)';
         ctx.strokeStyle = '#00ffff';
         ctx.lineWidth = 4;
-
         ctx.beginPath();
         const waveTime = Date.now() * 0.005;
-        ctx.moveTo(0, waterLevel);
-        for (let x = 0; x <= canvas.width; x += 15) {
-            const waveY = waterLevel + Math.sin(x * 0.035 + waveTime) * 6;
-            ctx.lineTo(x, waveY);
+        ctx.moveTo(tsunamiX - 100, canvas.height + 200);
+        for (let y = canvas.height + 100; y >= -100; y -= 15) {
+            const waveOffsetX = Math.sin(y * 0.045 + waveTime) * 12 + Math.cos(y * 0.02 + waveTime * 0.5) * 6;
+            ctx.lineTo(tsunamiX + waveOffsetX, y);
         }
-        ctx.lineTo(canvas.width, canvas.height + cameraY + 200);
-        ctx.lineTo(0, canvas.height + cameraY + 200);
+        ctx.lineTo(tsunamiX - 220, -100);
+        ctx.lineTo(tsunamiX - 220, canvas.height + 200);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        ctx.restore(); // cameraY
+        ctx.restore(); // cameraX
         ctx.restore(); // screenShake
     }
 
