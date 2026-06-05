@@ -1,69 +1,70 @@
 const assert = require('assert');
 
-// Mock a lightweight version of game physics and state for unit testing
+// Mock spring mechanics
 function calculateSpringForce(dist, restLength, k) {
     if (dist <= restLength) return 0;
     return (dist - restLength) * k;
 }
 
-function constrainPlayerX(x, width, canvasWidth) {
-    let vx = 1; // dummy velocity
-    let px = x;
-    if (px < 0) {
-        px = 0;
-        vx = 0;
+// Mock running speed adjustment relative to key inputs
+function getAdjustedSpeed(vx, keys, baseSpeed) {
+    let speed = vx;
+    if (keys.d) {
+        speed = Math.min(baseSpeed + 3.0, speed + 0.15);
+    } else if (keys.a) {
+        speed = Math.max(baseSpeed - 1.5, speed - 0.1);
+    } else {
+        if (speed > baseSpeed) speed -= 0.05;
+        if (speed < baseSpeed) speed += 0.05;
     }
-    if (px + width > canvasWidth) {
-        px = canvasWidth - width;
-        vx = 0;
-    }
-    return { x: px, vx };
+    return Math.round(speed * 100) / 100; // round to 2 decimals
 }
 
-function processDamage(health, amt, invulnerableFrames) {
-    if (invulnerableFrames > 0) return { health, invulnerableFrames };
+// Mock tsunami chase logic
+function updateTsunamiX(playerX, waveX, waveSpeed, baseRunSpeed) {
+    let currentWaveSpeed = waveSpeed;
+    const distanceToWave = playerX - waveX;
+    
+    if (distanceToWave > 350) {
+        currentWaveSpeed = Math.max(3.2, 5.0 * 0.95); // using dummy player.vx = 5.0
+    } else if (distanceToWave < 120) {
+        currentWaveSpeed = baseRunSpeed * 0.75;
+    }
+    
     return {
-        health: Math.max(0, health - amt),
-        invulnerableFrames: 30
+        x: waveX + currentWaveSpeed,
+        isOverlapping: (playerX < waveX + 30)
     };
 }
 
-// RUN TESTS
+// RUN REWRITTEN RUNNER TEST SUITE
 try {
-    console.log("🚀 Running unit tests for Luffy's Ascension physics and mechanics...");
+    console.log("🚀 Running unit tests for Luffy's Horizontal Runner mechanics...");
 
-    // Test 1: Elastic spring force calculations
+    // Test 1: Grappling Spring Force
     console.log("Test 1: calculateSpringForce");
-    assert.strictEqual(calculateSpringForce(100, 200, 0.1), 0, "No spring force when compressed/slack");
-    assert.strictEqual(calculateSpringForce(250, 200, 0.08), 4, "Spring force should be (250-200)*0.08 = 4");
+    assert.strictEqual(calculateSpringForce(100, 200, 0.1), 0, "Slack rope produces zero tension force");
+    assert.strictEqual(calculateSpringForce(250, 200, 0.09), 4.5, "Spring force should pull (250-200)*0.09 = 4.5");
     console.log("✅ Test 1 Passed!");
 
-    // Test 2: Player boundary constraints
-    console.log("Test 2: constrainPlayerX");
-    const test1 = constrainPlayerX(-10, 20, 480);
-    assert.strictEqual(test1.x, 0, "X should be constrained to 0 when negative");
-    assert.strictEqual(test1.vx, 0, "Velocity should reset to 0 on boundary hit");
-
-    const test2 = constrainPlayerX(470, 20, 480);
-    assert.strictEqual(test2.x, 460, "X should be constrained to canvasWidth - playerWidth");
-    assert.strictEqual(test2.vx, 0, "Velocity should reset to 0 on right boundary hit");
+    // Test 2: Input Speed adjustment
+    console.log("Test 2: getAdjustedSpeed");
+    assert.strictEqual(getAdjustedSpeed(3.5, { d: true }, 3.5), 3.65, "Should accelerate by 0.15 on D key");
+    assert.strictEqual(getAdjustedSpeed(3.5, { a: true }, 3.5), 3.4, "Should decelerate by 0.1 on A key");
+    assert.strictEqual(getAdjustedSpeed(5.0, {}, 3.5), 4.95, "Should gradually return to base run speed when no keys pressed");
     console.log("✅ Test 2 Passed!");
 
-    // Test 3: Player health and invulnerability frames
-    console.log("Test 3: processDamage");
-    const dmg1 = processDamage(100, 25, 0);
-    assert.strictEqual(dmg1.health, 75, "Health should decrease by 25");
-    assert.strictEqual(dmg1.invulnerableFrames, 30, "Should set 30 invulnerability frames");
+    // Test 3: Tsunami Chase and Submersion
+    console.log("Test 3: updateTsunamiX");
+    const waveClose = updateTsunamiX(100, 0, 3.2, 3.5); // distance = 100 (< 120)
+    assert.strictEqual(waveClose.isOverlapping, false, "Not overlapping when player is ahead");
+    assert.strictEqual(waveClose.x, 2.625, "Wave speed should slow down (3.5 * 0.75 = 2.625)");
 
-    const dmg2 = processDamage(75, 25, 20);
-    assert.strictEqual(dmg2.health, 75, "Health should not decrease when invulnerable");
-    assert.strictEqual(dmg2.invulnerableFrames, 20, "Invulnerability frames should remain unchanged");
-
-    const dmg3 = processDamage(10, 25, 0);
-    assert.strictEqual(dmg3.health, 0, "Health should not go below 0");
+    const waveOver = updateTsunamiX(50, 40, 3.2, 3.5); // playerX < waveX + 30 (50 < 70)
+    assert.strictEqual(waveOver.isOverlapping, true, "Player is caught inside wave when distance is under 30px");
     console.log("✅ Test 3 Passed!");
 
-    console.log("\n🎉 All 3 test suites passed successfully!");
+    console.log("\n🎉 All rewritten runner test suites passed successfully!");
     process.exit(0);
 } catch (error) {
     console.error("❌ Test failed:", error.message);

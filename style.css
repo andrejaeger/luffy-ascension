@@ -49,8 +49,8 @@ body {
 /* Main Container styling */
 #game-container {
     position: relative;
-    width: 480px;
-    height: 820px;
+    width: 720px;
+    height: 500px;
     display: flex;
     flex-direction: column;
     background: #11141c;

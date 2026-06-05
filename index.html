@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luffy's Ascension - Blue Line Fountain Escape</title>
+    <title>Luffy's Escape - Aqua Deluge Runner</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -28,34 +28,34 @@
                 </div>
             </div>
 
-            <div class="hud-itemstats">
-                <div class="hud-stat"><span class="hud-label">HEIGHT</span> <span id="height-val" class="hud-val">0m</span></div>
+            <div class="hud-item stats">
+                <div class="hud-stat"><span class="hud-label">RUN</span> <span id="height-val" class="hud-val">0m</span></div>
                 <div class="hud-stat"><span class="hud-label">BERRIES</span> <span id="score-val" class="hud-val">0</span></div>
             </div>
         </header>
 
         <!-- Main Game Canvas -->
         <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="480" height="720"></canvas>
+            <canvas id="gameCanvas" width="720" height="400"></canvas>
         </div>
 
         <!-- Overlays -->
         <!-- Story / Intro Screen -->
         <div id="intro-screen" class="overlay active">
             <div class="overlay-content">
-                <h1>Luffy's Ascension</h1>
-                <h3 class="subtitle">Escape the Blue Line Fountain!</h3>
+                <h1>Luffy's Escape</h1>
+                <h3 class="subtitle">Aqua Deluge Runner</h3>
                 <div class="story-box">
-                    <p>💥 <strong>KATASTROPHE!</strong> Die <em>Thousand Sunny</em> ist an den Klippen eines geheimen Marine-Stützpunkts zerschellt! Plötzlich bricht eine uralte unterirdische Riesenfontäne – ähnlich der <strong>Blue Line</strong> – aus dem Meeresboden aus!</p>
-                    <p>🌊 Das Wasser steigt unaufhaltsam! Luffy muss seine Gum-Gum-Kräfte nutzen, um sich vertikal von Plattform zu Plattform zu ziehen, Marine-Wachen auszuschalten und den Marine-Kapitän an der Spitze zu besiegen, um den Flutmechanismus zu stoppen!</p>
+                    <p>🌊 <strong>FLUTWELLE!</strong> Ein riesiger Tsunami bricht von links herein und holt unaufhaltsam auf! Luffy muss rennen, was das Zeug hält!</p>
+                    <p>🏢 Doch der Weg ist versperrt durch gewaltige Marine-Wachtürme, Klippen und Stacheldraht! Ziehe dich per <strong>Gomu Gomu Grapple</strong> an Wachtürmen empor, schwinge über Abgründe und kämpfe dich durch Marine-Soldaten bis zum Tor, wo <strong>Smoker</strong> wartet!</p>
                 </div>
                 <div class="controls-box">
                     <h4>Steuerung:</h4>
                     <ul>
-                        <li>🖱️ <strong>Klicken / Tippen</strong> auf eine Plattform über Luffy: Gomu Gomu Stretch (Greifen & Ziehen)</li>
-                        <li>⌨️ <strong>A / D</strong> oder <strong>◀ / ▶</strong>: Nach links/rechts bewegen</li>
-                        <li>⌨️ <strong>W / S</strong> oder <strong>▲ / ▼</strong>: Arme manuell einziehen / lockern</li>
-                        <li>⌨️ <strong>Leertaste (Space)</strong>: Gomu Gomu no Pistol (Fernangriff)</li>
+                        <li>🖱️ <strong>Klicken / Tippen</strong> auf Wachtürme / Wolken: Arme dehnen (Schwingen & Ziehen)</li>
+                        <li>⌨️ <strong>A / D</strong> oder <strong>◀ / ▶</strong>: Geschwindigkeit regulieren / Schwingen</li>
+                        <li>⌨️ <strong>W / S</strong> oder <strong>▲ / ▼</strong>: Arme verlängern / verkürzen</li>
+                        <li>⌨️ <strong>Leertaste (Space)</strong>: Gomu Gomu no Pistol (Ferneffekt)</li>
                     </ul>
                 </div>
                 <button id="start-btn" class="pixel-btn">SPIEL STARTEN</button>
@@ -66,9 +66,9 @@
         <div id="gameover-screen" class="overlay">
             <div class="overlay-content">
                 <h2 class="danger-text">GAME OVER</h2>
-                <p>Das Wasser der Blue Line Fountain hat Luffy eingeholt...</p>
+                <p>Die gigantische Welle oder die Marine-Feinde haben Luffy aufgehalten...</p>
                 <div class="stats-summary">
-                    <p>Erreichte Höhe: <strong id="final-height">0m</strong></p>
+                    <p>Gelaufene Distanz: <strong id="final-height">0m</strong></p>
                     <p>Gesammelte Berries: <strong id="final-score">0</strong></p>
                 </div>
                 <button id="restart-btn" class="pixel-btn">ERNEUT VERSUCHEN</button>
@@ -79,8 +79,8 @@
         <div id="victory-screen" class="overlay">
             <div class="overlay-content">
                 <h2 class="victory-text">SIEG!</h2>
-                <h3 class="victory-subtitle">Marine-Kapitän besiegt!</h3>
-                <p>🎉 Luffy hat das Flottentor geschlossen und die Sunny-Crew gerettet!</p>
+                <h3 class="victory-subtitle">Kapitän Smoker besiegt!</h3>
+                <p>🎉 Luffy hat den Außenposten überwunden und entkommt mit der Thousand Sunny!</p>
                 <div class="stats-summary">
                     <p>Endpunktzahl: <strong id="victory-score">0</strong></p>
                 </div>
