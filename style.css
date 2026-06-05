@@ -49,8 +49,10 @@ body {
 /* Main Container styling */
 #game-container {
     position: relative;
-    width: 720px;
-    height: 500px;
+    width: min(95vw, 95vh * 1.44);
+    height: min(95vh, 95vw / 1.44);
+    max-width: 720px;
+    max-height: 500px;
     display: flex;
     flex-direction: column;
     background: #11141c;
@@ -152,10 +154,10 @@ canvas {
 /* Full-Screen Overlays (Glassmorphic) */
 .overlay {
     position: absolute;
-    top: 68px; /* Offset HUD */
+    top: 0;
     left: 0;
     width: 100%;
-    height: calc(100% - 68px);
+    height: 100%;
     background: rgba(8, 10, 15, 0.85);
     backdrop-filter: blur(12px);
     display: flex;
@@ -317,4 +319,209 @@ h1 {
 @keyframes pulse {
     0% { transform: scale(1); }
     100% { transform: scale(1.05); }
+}
+
+/* Orientation Warning Overlay */
+#orientation-warning {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0d0f14;
+    color: var(--text-white);
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+}
+
+@media (orientation: portrait) {
+    #orientation-warning {
+        display: flex;
+    }
+}
+
+.warning-content h2 {
+    font-family: var(--pixel-font);
+    font-size: 16px;
+    color: var(--luffy-red);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.warning-content p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.phone-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+    animation: rotatePhone 2s infinite ease-in-out;
+}
+
+@keyframes rotatePhone {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+}
+
+/* Mobile Controls Overlay */
+#mobile-controls {
+    display: none;
+    position: absolute;
+    bottom: 12px;
+    left: 0;
+    width: 100%;
+    padding: 0 16px;
+    z-index: 40;
+    pointer-events: none;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+@media (pointer: coarse) {
+    #mobile-controls {
+        display: flex;
+    }
+}
+
+.control-group {
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+    align-items: flex-end;
+}
+
+.control-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(20, 24, 33, 0.65);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: var(--text-white);
+    font-family: var(--pixel-font);
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    transition: background-color 0.1s, transform 0.1s;
+    outline: none;
+}
+
+.control-btn:active {
+    background-color: rgba(255, 204, 0, 0.4);
+    border-color: var(--luffy-yellow);
+    transform: scale(0.9);
+}
+
+.action-btn {
+    background: rgba(255, 51, 68, 0.4);
+    border-color: rgba(255, 51, 68, 0.6);
+}
+
+.action-btn:active {
+    background: rgba(255, 51, 68, 0.8);
+    border-color: var(--luffy-red);
+}
+
+.jump-btn {
+    background: rgba(51, 136, 255, 0.4);
+    border-color: rgba(51, 136, 255, 0.6);
+    border-radius: 8px;
+    width: 60px;
+    height: 40px;
+    font-size: 10px;
+}
+
+.jump-btn:active {
+    background: rgba(51, 136, 255, 0.8);
+    border-color: var(--marine-blue);
+}
+
+.vertical-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vertical-group .control-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 11px;
+}
+
+/* Side-by-side columns in overlays */
+.overlay-columns {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.overlay-columns > div {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 640px) {
+    .overlay-columns {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* Landscape / short-height screen styling compression */
+@media (max-height: 480px) {
+    #hud {
+        padding: 8px 12px;
+    }
+    .overlay {
+        padding: 12px;
+    }
+    h1 {
+        font-size: 18px;
+        margin-bottom: 4px;
+    }
+    .subtitle {
+        font-size: 11px;
+        margin-bottom: 12px;
+    }
+    .story-box, .controls-box {
+        padding: 10px;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+    .controls-box h4 {
+        margin-bottom: 6px;
+    }
+    .pixel-btn {
+        padding: 10px 20px;
+        font-size: 10px;
+    }
+    .stats-summary {
+        padding: 10px;
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+    .danger-text {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+    .victory-text {
+        font-size: 28px;
+        margin-bottom: 4px;
+    }
+    .victory-subtitle {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
 }

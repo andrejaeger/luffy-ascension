@@ -11,6 +11,15 @@
     <!-- Background overlay for CRT scanline effect -->
     <div class="crt-overlay"></div>
 
+    <!-- Orientation warning for portrait viewports -->
+    <div id="orientation-warning">
+        <div class="warning-content">
+            <div class="phone-icon">📱🔄</div>
+            <h2>Bitte drehe dein Handy</h2>
+            <p>Dieses Spiel wird im Querformat (Landscape) gespielt.</p>
+        </div>
+    </div>
+
     <div id="game-container">
         <!-- Dashboard / HUD -->
         <header id="hud">
@@ -37,6 +46,22 @@
         <!-- Main Game Canvas -->
         <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="720" height="400"></canvas>
+            
+            <!-- Mobile Controls Overlay -->
+            <div id="mobile-controls">
+                <div class="control-group left-group">
+                    <button id="btn-left" class="control-btn">◀</button>
+                    <button id="btn-right" class="control-btn">▶</button>
+                </div>
+                <div class="control-group right-group">
+                    <div class="vertical-group">
+                        <button id="btn-up" class="control-btn">▲</button>
+                        <button id="btn-down" class="control-btn">▼</button>
+                    </div>
+                    <button id="btn-punch" class="control-btn action-btn">👊</button>
+                    <button id="btn-jump" class="control-btn jump-btn">JUMP</button>
+                </div>
+            </div>
         </div>
 
         <!-- Overlays -->
@@ -45,18 +70,20 @@
             <div class="overlay-content">
                 <h1>Luffy's Escape</h1>
                 <h3 class="subtitle">Aqua Deluge Runner</h3>
-                <div class="story-box">
-                    <p>🌊 <strong>FLUTWELLE!</strong> Ein riesiger Tsunami bricht von links herein und holt unaufhaltsam auf! Luffy muss rennen, was das Zeug hält!</p>
-                    <p>🏢 Doch der Weg ist versperrt durch gewaltige Marine-Wachtürme, Klippen und Stacheldraht! Ziehe dich per <strong>Gomu Gomu Grapple</strong> an Wachtürmen empor, schwinge über Abgründe und kämpfe dich durch Marine-Soldaten bis zum Tor, wo <strong>Smoker</strong> wartet!</p>
-                </div>
-                <div class="controls-box">
-                    <h4>Steuerung:</h4>
-                    <ul>
-                        <li>🖱️ <strong>Klicken / Tippen</strong> auf Wachtürme / Wolken: Arme dehnen (Schwingen & Ziehen)</li>
-                        <li>⌨️ <strong>A / D</strong> oder <strong>◀ / ▶</strong>: Geschwindigkeit regulieren / Schwingen</li>
-                        <li>⌨️ <strong>W / S</strong> oder <strong>▲ / ▼</strong>: Arme verlängern / verkürzen</li>
-                        <li>⌨️ <strong>Leertaste (Space)</strong>: Gomu Gomu no Pistol (Ferneffekt)</li>
-                    </ul>
+                <div class="overlay-columns">
+                    <div class="story-box">
+                        <p>🌊 <strong>FLUTWELLE!</strong> Ein riesiger Tsunami bricht von links herein und holt unaufhaltsam auf! Luffy muss rennen, was das Zeug hält!</p>
+                        <p>🏢 Doch der Weg ist versperrt durch gewaltige Marine-Wachtürme, Klippen und Stacheldraht! Ziehe dich per <strong>Gomu Gomu Grapple</strong> an Wachtürmen empor, schwinge über Abgründe und kämpfe dich durch Marine-Soldaten bis zum Tor, wo <strong>Smoker</strong> wartet!</p>
+                    </div>
+                    <div class="controls-box">
+                        <h4>Steuerung:</h4>
+                        <ul>
+                            <li>🖱️ <strong>Klicken / Tippen</strong> auf Wachtürme / Wolken: Arme dehnen (Schwingen & Ziehen)</li>
+                            <li>⌨️ <strong>A / D</strong> oder <strong>◀ / ▶</strong>: Geschwindigkeit regulieren / Schwingen</li>
+                            <li>⌨️ <strong>W / S</strong> oder <strong>▲ / ▼</strong>: Arme verlängern / verkürzen</li>
+                            <li>⌨️ <strong>Leertaste (Space)</strong>: Gomu Gomu no Pistol (Ferneffekt)</li>
+                        </ul>
+                    </div>
                 </div>
                 <button id="start-btn" class="pixel-btn">SPIEL STARTEN</button>
             </div>
