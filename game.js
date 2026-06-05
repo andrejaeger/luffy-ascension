@@ -91,6 +91,17 @@ function initGame() {
     // Keyboard Listeners
     window.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
+        
+        // Prevent default actions for control keys (scrolling, spacebar triggering focused buttons)
+        if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key) || e.key === ' ') {
+            e.preventDefault();
+        }
+
+        // Blur any focused UI button to prevent Spacebar from triggering a click event on it
+        if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+        }
+
         if (key === 'a' || e.key === 'ArrowLeft') keys.a = true;
         if (key === 'd' || e.key === 'ArrowRight') keys.d = true;
         if (key === 'w' || e.key === 'ArrowUp') {
@@ -143,9 +154,18 @@ function initGame() {
     }, { passive: false });
 
     // UI Click Handlers
-    document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('restart-btn').addEventListener('click', showIntroScreen);
-    document.getElementById('win-restart-btn').addEventListener('click', showIntroScreen);
+    document.getElementById('start-btn').addEventListener('click', (e) => {
+        e.target.blur();
+        startGame();
+    });
+    document.getElementById('restart-btn').addEventListener('click', (e) => {
+        e.target.blur();
+        showIntroScreen();
+    });
+    document.getElementById('win-restart-btn').addEventListener('click', (e) => {
+        e.target.blur();
+        showIntroScreen();
+    });
 
     // Setup mobile controls event binding
     function setupMobileControls() {
